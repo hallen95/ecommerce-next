@@ -1,8 +1,53 @@
 import Head from 'next/head'
 import Image from 'next/image'
 import styles from '../styles/Home.module.css'
+import useScript from '../hooks/useScript'
+// import useMercadoPago from '../../hooks/useMercadoPago'
+import axios from 'axios'
+
+const publicKey = process.env.NEXT_PUBLIC_PUBLIC_KEY_MP
 
 export default function Home() {
+  const { MercadoPago } = useScript(
+    'https://sdk.mercadopago.com/js/v2',
+    'MercadoPago'
+  )
+
+  const orderData = {
+    quantity: 1,
+    description: 'Some description here',
+    price: 1000.0
+  }
+
+  const sendRequest = async () => {
+    try {
+      const response = await axios(`api/hello`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        data: JSON.stringify(orderData)
+      })
+
+      createCheckoutButton(response.data.id)
+    } catch (e) {
+      alert('Unexpected error')
+    }
+  }
+
+  function createCheckoutButton(preferenceId) {
+    const mp = new MercadoPago(publicKey)
+    // Initialize the checkout
+    mp.checkout({
+      preference: {
+        id: preferenceId
+      },
+      render: {
+        container: '#button-checkout', // Class name where the payment button will be displayed
+        label: 'Pay' // Change the payment button text (optional)
+      }
+    })
+  }
   return (
     <div className={styles.container}>
       <Head>
@@ -15,7 +60,8 @@ export default function Home() {
         <h1 className={styles.title}>
           Welcome to <a href="https://nextjs.org">Next.js!</a>
         </h1>
-
+        <button onClick={() => sendRequest(orderData)}>CLICK ME</button>
+        <div id="button-checkout"></div>
         <p className={styles.description}>
           Get started by editing{' '}
           <code className={styles.code}>pages/index.js</code>
